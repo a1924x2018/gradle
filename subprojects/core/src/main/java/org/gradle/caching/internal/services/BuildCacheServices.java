@@ -26,12 +26,14 @@ import org.gradle.caching.internal.controller.BuildCacheController;
 import org.gradle.caching.internal.controller.RootBuildCacheControllerRef;
 import org.gradle.caching.internal.origin.OriginMetadataFactory;
 import org.gradle.caching.internal.packaging.BuildCacheEntryPacker;
+import org.gradle.caching.internal.packaging.impl.FilePermissionAccess;
 import org.gradle.caching.internal.packaging.impl.GZipBuildCacheEntryPacker;
 import org.gradle.caching.internal.packaging.impl.TarBuildCacheEntryPacker;
 import org.gradle.caching.internal.services.BuildCacheControllerFactory.BuildCacheMode;
 import org.gradle.caching.internal.services.BuildCacheControllerFactory.RemoteAccessMode;
 import org.gradle.internal.SystemProperties;
 import org.gradle.internal.file.Deleter;
+import org.gradle.internal.file.FileException;
 import org.gradle.internal.hash.StreamHasher;
 import org.gradle.internal.instantiation.InstantiatorFactory;
 import org.gradle.internal.nativeintegration.filesystem.FileSystem;
@@ -62,7 +64,7 @@ public class BuildCacheServices {
         StringInterner stringInterner
     ) {
         return new GZipBuildCacheEntryPacker(
-            new TarBuildCacheEntryPacker(deleter, fileSystem, fileHasher, stringInterner));
+            new TarBuildCacheEntryPacker(deleter, new FilePermissionsAccessAdapter(fileSystem), fileHasher, stringInterner));
     }
 
     OriginMetadataFactory createOriginMetadataFactory(
@@ -141,4 +143,22 @@ public class BuildCacheServices {
         );
     }
 
+    private static final class FilePermissionsAccessAdapter implements FilePermissionAccess {
+
+        private final FileSystem fileSystem;
+
+        public FilePermissionsAccessAdapter(FileSystem fileSystem) {
+            this.fileSystem = fileSystem;
+        }
+
+        @Override
+        public int getUnixMode(File f) throws FileException {
+            return fileSystem.getUnixMode(f);
+        }
+
+        @Override
+        public void chmod(File file, int mode) throws FileException {
+            fileSystem.chmod(file, mode);
+        }
+    }
 }

@@ -24,7 +24,6 @@ description = "Package build cache results"
 
 dependencies {
     implementation(project(":baseServices"))
-    implementation(project(":native"))
     implementation(project(":coreApi"))
     implementation(project(":buildCache"))
     implementation(project(":files"))
